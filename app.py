@@ -5,64 +5,123 @@ from scipy import stats
 import plotly.express as px
 import plotly.figure_factory as ff
 
-# ---------- PAGE CONFIG & SIMPLE CSS ----------
+# ---------- CSS HELPER ----------
+def inject_base_css():
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background:
+                radial-gradient(circle at 0% 100%, rgba(184, 11, 11, 0.10) 0, transparent 45%),
+                radial-gradient(circle at 100% 0%, rgba(184, 11, 11, 0.06) 0, transparent 40%),
+                linear-gradient(to bottom, #ffffff 0, #f9fafb 55%, #f3f4f6 100%);
+            background-attachment: fixed;
+        }
+
+        /* Sidebar background */
+        section[data-testid="stSidebar"] {
+            background:
+                radial-gradient(circle at 0% 0%, rgba(184, 11, 11, 0.10) 0, transparent 45%),
+                radial-gradient(circle at 100% 100%, rgba(184, 11, 11, 0.05) 0, transparent 40%),
+                linear-gradient(to bottom, #f9fafb 0, #f3f4f6 100%);
+            background-attachment: fixed;
+            border-right: 1px solid rgba(209, 213, 219, 0.9);
+        }
+
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .main > div {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Card style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 14px;
+            border: 1px solid rgba(209, 213, 219, 0.9);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        div[data-testid="metric-container"] {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 12px;
+            border: 1px solid rgba(209, 213, 219, 0.9);
+            padding: 0.8rem 1rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+        }
+
+        /* Expanders (if you use any later) */
+        [data-testid="stExpander"] {
+            border-radius: 14px !important;
+            border: 0px solid rgba(209, 213, 219, 0.9);
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+            backdrop-filter: blur(10px);
+            margin-bottom: 0.6rem;
+        }
+        [data-testid="stExpander"] summary {
+            font-weight: 400;
+            letter-spacing: 0.0em;
+        }
+
+        /* Primary buttons – red gradient */
+        .stButton > button[kind="primary"] {
+            background: linear-gradient(135deg, #b80b0b, #e11d48);
+            color: white;
+            border-radius: 999px;
+            border: none;
+            box-shadow: 0 8px 18px rgba(184, 11, 11, 0.35);
+            transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+        }
+        .stButton > button[kind="primary"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px rgba(184, 11, 11, 0.45);
+        }
+
+        /* Secondary buttons */
+        .stButton > button[kind="secondary"] {
+            border-radius: 999px;
+        }
+
+        /* Inputs rounded */
+        .stTextInput > div > div > input,
+        .stNumberInput input,
+        .stSelectbox select {
+            border-radius: 999px;
+        }
+
+        h1, h2, h3 {
+            letter-spacing: 0.04em;
+        }
+
+        .dataframe tbody tr:nth-child(odd) {
+            background-color: #fafafa;
+        }
+        .dataframe tbody tr:nth-child(even) {
+            background-color: #f0f0f0;
+        }
+        .dataframe thead th {
+            background-color: #f1f3f5;
+            color: #111827;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+# ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Preparedness Index Dashboard", layout="wide")
+inject_base_css()
 
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background: #ffffff;
-        color: #222222;
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-
-    .glass-card {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e5e5e5;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        padding: 1.2rem 1.4rem;
-        margin-bottom: 1rem;
-    }
-
-    div[data-testid="metric-container"] {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e5e5e5;
-        padding: 0.8rem 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    section[data-testid="stSidebar"] {
-        background: #f8f9fb;
-        border-right: 1px solid #e5e5e5;
-    }
-
-    .dataframe tbody tr:nth-child(odd) {
-        background-color: #fafafa;
-    }
-    .dataframe tbody tr:nth-child(even) {
-        background-color: #f0f0f0;
-    }
-    .dataframe thead th {
-        background-color: #f1f3f5;
-        color: #222222;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ---------- HELPER FUNCTIONS ----------
-
+# ---------- STATS HELPERS ----------
 def cohen_d_independent(x, y):
-    """Cohen's d for independent samples."""
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
     nx, ny = len(x), len(y)
@@ -73,7 +132,6 @@ def cohen_d_independent(x, y):
     return (x.mean() - y.mean()) / pooled_sd
 
 def interpret_effect_size(d):
-    """Simple interpretation for Cohen's d."""
     if np.isnan(d):
         return "not defined"
     ad = abs(d)
@@ -113,7 +171,6 @@ if uploaded is None:
     st.info("Upload a file to start the analysis.")
     st.stop()
 
-# Detect file type and read
 if uploaded.name.lower().endswith((".xlsx", ".xls")):
     df = pd.read_excel(uploaded)
 else:
@@ -291,9 +348,9 @@ fig_bar = px.bar(
     labels={village_col: "Village", "mean_score": "Mean preparedness score"},
 )
 fig_bar.update_layout(
-    plot_bgcolor="#ffffff",
-    paper_bgcolor="#ffffff",
-    font_color="#222222",
+    plot_bgcolor="rgba(255,255,255,0)",
+    paper_bgcolor="rgba(255,255,255,0)",
+    font_color="#111827",
 )
 st.plotly_chart(fig_bar, use_container_width=True)
 st.markdown("</div>", unsafe_allow_html=True)
@@ -321,9 +378,9 @@ heatmap = ff.create_annotated_heatmap(
 heatmap.update_layout(
     title="Correlation heatmap",
     xaxis=dict(side="bottom"),
-    plot_bgcolor="#ffffff",
-    paper_bgcolor="#ffffff",
-    font_color="#222222",
+    plot_bgcolor="rgba(255,255,255,0)",
+    paper_bgcolor="rgba(255,255,255,0)",
+    font_color="#111827",
 )
 st.plotly_chart(heatmap, use_container_width=True)
 st.markdown("</div>", unsafe_allow_html=True)
@@ -340,12 +397,12 @@ with col_a:
         x=used_overall_col,
         nbins=10,
         title="Distribution of overall preparedness scores",
-        color_discrete_sequence=["#e63946"],
+        color_discrete_sequence=["#e11d48"],
     )
     fig_hist.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        font_color="#222222",
+        plot_bgcolor="rgba(255,255,255,0)",
+        paper_bgcolor="rgba(255,255,255,0)",
+        font_color="#111827",
     )
     st.plotly_chart(fig_hist, use_container_width=True)
 
@@ -365,15 +422,15 @@ with col_b:
         color_discrete_sequence=px.colors.sequential.Reds_r,
     )
     fig_scatter.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        font_color="#222222",
+        plot_bgcolor="rgba(255,255,255,0)",
+        paper_bgcolor="rgba(255,255,255,0)",
+        font_color="#111827",
     )
     st.plotly_chart(fig_scatter, use_container_width=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------- T-TEST BETWEEN VILLAGES (WITH EFFECT SIZE) ----------
+# ---------- T-TEST BETWEEN VILLAGES ----------
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.subheader("t-test between two villages (Welch)")
 
@@ -390,10 +447,8 @@ else:
     if len(data_v1) < 2 or len(data_v2) < 2:
         st.warning("Each village needs at least 2 observations for a reliable t-test.")
     else:
-        # Welch's t-test (unequal variances)
         t_stat, p_val = stats.ttest_ind(data_v1, data_v2, equal_var=False)
 
-        # Cohen's d (effect size)
         d = cohen_d_independent(data_v1, data_v2)
         d_label = interpret_effect_size(d)
 
@@ -421,9 +476,9 @@ else:
         )
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------- SIMPLE REGRESSION SUMMARY ----------
+# ---------- SIMPLE CORRELATION SUMMARY ----------
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.subheader("Simple indicator–preparedness relationships (correlation summary)")
+st.subheader("Indicator–preparedness correlations")
 
 corr_series = corr_df[used_overall_col].drop(labels=[used_overall_col])
 corr_table = corr_series.reset_index()
@@ -432,8 +487,8 @@ corr_table.columns = ["Indicator", "Correlation with overall score"]
 st.dataframe(corr_table)
 
 st.write(
-    "You can use these correlations to describe which preparedness components "
-    "are most strongly associated with the overall preparedness score in your discussion."
+    "You can use these correlations to discuss which preparedness components are most strongly "
+    "associated with the overall preparedness score in your dissertation."
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
