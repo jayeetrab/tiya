@@ -77,7 +77,7 @@ st.sidebar.header("Column mapping")
 village_col = st.sidebar.selectbox(
     "Village column",
     cols,
-    index=cols.index("Village_Name") if "Village_Name" in cols else 0,
+    index=cols.index("Village") if "Village" in cols else 0,
 )
 
 indicator_default_candidates = [
@@ -86,7 +86,7 @@ indicator_default_candidates = [
     if any(
         k in c
         for k in [
-            "Warning_Awareness",
+            "Awareness",
             "Drill_Participation",
             "Shelter_Access",
             "Evacuation_Route_Knowledge",
@@ -186,7 +186,7 @@ st.markdown(
 )
 
 # ---------- AWARENESS & DRILL PERCENTAGES ----------
-awareness_col = next((c for c in indicator_cols if "Warning_Awareness" in c), None)
+awareness_col = next((c for c in indicator_cols if "Awareness" in c), None)
 drill_col = next((c for c in indicator_cols if "Drill_Participation" in c), None)
 
 def pct_high(col_name: str):
@@ -207,7 +207,7 @@ if awareness_col:
     c1.write(f"**% high awareness (score ≥ {threshold_high})**")
     c1.write(f"{pct_high_awareness:.1f}% of households have high awareness.")
 else:
-    c1.info("No column containing 'Warning_Awareness' detected.")
+    c1.info("No column containing 'Awareness' detected.")
 
 if drill_col:
     c2.write(f"**% high drill participation (score ≥ {threshold_high})**")
